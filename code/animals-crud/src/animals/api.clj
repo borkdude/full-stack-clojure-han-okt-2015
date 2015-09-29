@@ -8,7 +8,8 @@
      [ring.util.response :refer (redirect)]
      [animals.animals :as animals]
      [clj-json.core :as json]
-     [animals.db :as db]))
+     [animals.db :as db]
+     [clojure.edn :as edn]))
 
 (defn handle-exception
   [ctx]
@@ -17,6 +18,7 @@
     {:status 500 :message (.getMessage e)}))
 
 (defroutes routes
+
   (ANY "/animals"
        [name species]
        (resource
@@ -30,9 +32,10 @@
         :post! (fn [ctx] {::id (animals/create! db/db {:name name :species species})})
         :post-redirect? (fn [ctx] {:location (str "/animals/" (::id ctx))})
         :handle-exception handle-exception))
+
   (ANY "/animals/:id"
        [id name species]
-       (let [id (Integer/parseInt id)]
+       (let [id (edn/read-string id)]
          (resource
            :available-media-types ["application/edn"]
            :allowed-methods [:get :put :delete]
@@ -46,6 +49,7 @@
            :respond-with-entity? true
            :delete! (fn [ctx] (animals/delete! db/db id))
            :handle-exception handle-exception)))
+
   (GET "/greeting" []
        "Hello World!")
   (ANY "/"
